@@ -10,7 +10,7 @@ switch (process.env.NODE_ENV || 'development') {
     case 'development':
     return {
       // Use local MongoDB database
-      mongo_uri: 'mongodb://localhost/loop-api'
+      mongo_uri: 'mongodb://localhost/trending_api'
     };
   }
 })();
