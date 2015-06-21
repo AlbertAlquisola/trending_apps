@@ -1,3 +1,4 @@
 module.exports = {
-  apps: require('./App')
+  apps: require('./app'),
+  snapshots: require('./snapshot')
 };

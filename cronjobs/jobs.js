@@ -1,8 +1,9 @@
-var _       = require('lodash'),
-    async   = require('async'),
-    request = require('request'),
-    CronJob = require('cron').CronJob,
-    urls    = require('./urls');
+var _        = require('lodash'),
+    async    = require('async'),
+    request  = require('request'),
+    Snapshot = require('../models/snapshot'),
+    CronJob  = require('cron').CronJob,
+    urls     = require('./urls');
 // var cronJobTimes = '00 00 12 * * 1-7';
 
 function makeRequests(value, key) {
@@ -12,7 +13,7 @@ function makeRequests(value, key) {
 
   function makeRequest(callback) {
     request(value, function(err, data, body) { 
-      console.log(data);
+      // console.log(data);
 
       if (err) {
         console.log(err);
@@ -24,8 +25,18 @@ function makeRequests(value, key) {
     });
   }
 
+  function formatSnapshot(data, body, callback) {
+    // pass through for now until actually formatting JSON
+    callback(null, data, body);
+  }
+
   function addSnapshotToDb(data, body, callback) {
     // pass through for now until actually inserting into DB
+    var snapshot = new Snapshot({date: '06202015', ranking: [1]});
+    console.log(snapshot.date);
+    snapshot.save(function(err, snapshot) {
+      console.log(snapshot);
+    });
     callback(null, 'done');
   }
 
@@ -41,6 +52,7 @@ function makeRequests(value, key) {
   function fetchAppData() {
     async.waterfall([
       makeRequest,
+      formatSnapshot,
       addSnapshotToDb
 
     ], doneCallback);

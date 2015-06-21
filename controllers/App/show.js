@@ -1,4 +1,4 @@
-var App = require('../../models/App');
+var App = require('../../models/app');
 
 module.exports = function(req, res, next) {
   App.findById(req.params.id, function(err, app){

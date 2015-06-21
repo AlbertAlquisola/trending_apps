@@ -1,4 +1,4 @@
-var App = require('../../models/App');
+var App = require('../../models/app');
 
 module.exports = function(req, res, next) {
   App.find({}, function(err, apps){
