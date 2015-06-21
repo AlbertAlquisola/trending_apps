@@ -1,9 +1,10 @@
-var express       = require('express'),     // Express Framework
-    mongoose      = require('mongoose'),    // MongoDB Mapping
-    bodyParser    = require('body-parser'), // Request body parser
-    config        = require('./config'),    // Config options
-    errorhandler  = require('errorhandler'),// Stack trace printing on error
-    app           = express();              // Creating the express app
+var express       = require('express'),      // Express Framework
+    mongoose      = require('mongoose'),     // MongoDB Mapping
+    bodyParser    = require('body-parser'),  // Request body parser
+    errorhandler  = require('errorhandler'), // Stack trace printing on error
+    config        = require('./config'),     // Config options
+    cronJob       = require('./cronjobs'),   //start cronjob to fetch data daily
+    app           = express();               // Creating the express app
 
 // Creating MongoDB connection via Mongoose
 mongoose.connect(config.database.mongo_uri);
@@ -39,3 +40,4 @@ app.listen(app.get("port"), function() {
                " in " + app.settings.env + " mode"
   console.log(status);
 });
+
