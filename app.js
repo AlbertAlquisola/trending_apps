@@ -3,7 +3,7 @@ var express       = require('express'),      // Express Framework
     bodyParser    = require('body-parser'),  // Request body parser
     errorhandler  = require('errorhandler'), // Stack trace printing on error
     config        = require('./config'),     // Config options
-    cronJob       = require('./cronjobs'),   //start cronjob to fetch data daily
+    cronJob       = require('./cronjobs'),   // start cronjob to fetch data daily
     app           = express();               // Creating the express app
 
 // Creating MongoDB connection via Mongoose

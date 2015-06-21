@@ -1,3 +1,3 @@
 module.exports  = {
-  fetcher: require('./fetcher')
+  cronjob: require('./jobs')
 };
