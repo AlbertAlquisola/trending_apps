@@ -2,19 +2,13 @@ var mongoose = require('mongoose'),
     Schema   = mongoose.Schema
 
 var Snapshot = new Schema({
-  date: {
-    type:     String,
+  created_at: {
+    type:     Date,
     required: true
   },
   ranking: {
     type: Array,
     required: true
-  },
-  createdAt: {
-    type:     Date
-  },
-  updatedAt: {
-    type:     Date
   }
 });
 

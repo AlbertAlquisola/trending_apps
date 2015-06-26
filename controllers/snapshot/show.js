@@ -1,1 +1,1 @@
-show.js
+module.exports = {};

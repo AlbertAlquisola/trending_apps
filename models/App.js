@@ -2,27 +2,18 @@ var mongoose = require('mongoose'),
     Schema   = mongoose.Schema
 
 var App = new Schema({
-  title: {
-    type:     String,
+  created_at: {
+    type: Date,
     required: true
   },
-  category: {
+
+  app_id: {
     type: String,
     required: true
   },
-  details: {
-    type:     String
-  },
-  ranking: {
-    type: Number,
-    required: true
-  },
-  createdAt: {
-    type:     Date,
-    required: true
-  },
-  updatedAt: {
-    type:     Date,
+
+  metadata: {
+    type: Object,
     required: true
   }
 });

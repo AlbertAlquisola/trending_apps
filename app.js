@@ -40,4 +40,3 @@ app.listen(app.get("port"), function() {
                " in " + app.settings.env + " mode"
   console.log(status);
 });
-

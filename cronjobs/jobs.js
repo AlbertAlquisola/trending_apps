@@ -2,42 +2,58 @@ var _        = require('lodash'),
     async    = require('async'),
     request  = require('request'),
     Snapshot = require('../models/snapshot'),
+    App      = require('../models/app'),
     CronJob  = require('cron').CronJob,
     urls     = require('./urls');
-// var cronJobTimes = '00 00 12 * * 1-7';
 
 function makeRequests(value, key) {
-  // set to fire every second for testing purposes
-  // make sure to convert this to once-per-day
-  new CronJob('* * * * * *', fetchAppData, null, true, 'America/Los_Angeles');
+  new CronJob('20 07 22 * * 0-6', fetchAppData, null, true, 'America/Los_Angeles');
 
   function makeRequest(callback) {
-    request(value, function(err, data, body) { 
-      // console.log(data);
+    var options = {};
 
+    request(value, function(err, data) { 
       if (err) {
         console.log(err);
-        return callback(err);
-
-      } else {
-        callback(null, data, body);
+        return callback(new Error('There was an error fetching data from the API.'));
       }
+
+      options.data = JSON.parse(data.body);
+      callback(null, options);
     });
   }
 
-  function formatSnapshot(data, body, callback) {
-    // pass through for now until actually formatting JSON
-    callback(null, data, body);
-  }
+  function addSnapshotToDb(options, callback) {
+    var snapshot = new Snapshot({created_at: new Date(), ranking: options.data.feed.entry});
 
-  function addSnapshotToDb(data, body, callback) {
-    // pass through for now until actually inserting into DB
-    var snapshot = new Snapshot({date: '06202015', ranking: [1]});
-    console.log(snapshot.date);
     snapshot.save(function(err, snapshot) {
-      console.log(snapshot);
+      if (err) {
+        console.log(err);
+        return callback(new Error('There was an error saving the snapshot to the db.'));
+      }
+
+      callback(null, options);
     });
-    callback(null, 'done');
+  }
+
+  function addNewAppsToDb(options, callback) {
+    _.each(options.data.feed.entry, function(appData) {
+      var appId = appData.id.attributes['im:id'];
+
+      App.find({app_id: appId}, function(err, app) {
+        if (err) {
+          console.log(err);
+          return callback(new Error('There was an error fetching the matching app.'));
+        }
+
+        if (!app.length) {
+          var newApp = new App({created_at: new Date(), app_id: appId, metadata: appData});
+          newApp.save();
+        }
+      });
+    });
+
+    callback(null, options);
   }
 
   function doneCallback(err, results) {
@@ -52,8 +68,8 @@ function makeRequests(value, key) {
   function fetchAppData() {
     async.waterfall([
       makeRequest,
-      formatSnapshot,
-      addSnapshotToDb
+      addSnapshotToDb,
+      addNewAppsToDb
 
     ], doneCallback);
   }
