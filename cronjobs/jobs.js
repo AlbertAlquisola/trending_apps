@@ -12,7 +12,7 @@ function scheduleJob(value, key) {
       fetched;
 
   // schedule daily cronjob to run at 8am PST
-  new CronJob('00 12 11 * * 0-6', fetchAppData, null, true, 'America/Los_Angeles');
+  new CronJob('00 00 08 * * 0-6', fetchAppData, null, true, 'America/Los_Angeles');
 
   function makeRequest(callback) {
     var options = {};
