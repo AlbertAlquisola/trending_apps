@@ -4,7 +4,7 @@ var _ = require('lodash'),
     Snapshot = require('../../models/snapshot');
 
 module.exports = function(req, res, next) {
-  var date = moment(req.params.date, 'MM-DD-YYYY');
+  var date = req.params.date ? moment(new Date(req.params.date)) : moment();
 
   if (!date.isValid())
     return res.json({status: 400, error: 'invalid date requested.'});
