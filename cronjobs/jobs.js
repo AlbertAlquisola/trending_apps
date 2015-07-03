@@ -1,18 +1,23 @@
 var _        = require('lodash'),
     async    = require('async'),
     request  = require('request'),
+    moment   = require('moment'),
+    CronJob  = require('cron').CronJob,
     Snapshot = require('../models/snapshot'),
     App      = require('../models/app'),
-    CronJob  = require('cron').CronJob,
     urls     = require('./urls');
 
-function makeRequests(value, key) {
-  new CronJob('20 07 22 * * 0-6', fetchAppData, null, true, 'America/Los_Angeles');
+function scheduleJob(value, key) {
+  var attemptCount = 0,
+      fetched;
+
+  // schedule daily cronjob to run at 8am PST
+  new CronJob('00 12 11 * * 0-6', fetchAppData, null, true, 'America/Los_Angeles');
 
   function makeRequest(callback) {
     var options = {};
 
-    request(value, function(err, data) { 
+    request(value, function(err, data) {
       if (err) {
         console.log(err);
         return callback(new Error('There was an error fetching data from the API.'));
@@ -24,7 +29,11 @@ function makeRequests(value, key) {
   }
 
   function addSnapshotToDb(options, callback) {
-    var snapshot = new Snapshot({created_at: new Date(), ranking: options.data.feed.entry});
+    var snapshot = new Snapshot({
+      created_at: new Date(),
+      recorded_date: moment().format('MM-DD-YYYY'),
+      ranking: options.data.feed.entry
+    });
 
     snapshot.save(function(err, snapshot) {
       if (err) {
@@ -57,10 +66,18 @@ function makeRequests(value, key) {
   }
 
   function doneCallback(err, results) {
-    if (err) {
+    // if error, recursively try and fetch data.
+    if (err && attemptCount < 10 && !fetched) {
       console.log(err);
-    
+      attemptCount++;
+      fetchAppData();
+
+    } else if (attemptCount >= 10) {
+      console.log('excess request attempts made. Stop scheduler from running.');
+
     } else {
+      fetched = true;
+      console.log('successfully pulled in app data at: ', new Date());
       console.log(results);
     }
   }
@@ -75,4 +92,5 @@ function makeRequests(value, key) {
   }
 }
 
-_.forIn(urls, makeRequests);
+// for every url, schedule a daily cronjob
+_.forIn(urls, scheduleJob);

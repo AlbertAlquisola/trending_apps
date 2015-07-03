@@ -1,3 +1,3 @@
 module.exports = {
-  show: './show'
+  show: require('./show')
 };

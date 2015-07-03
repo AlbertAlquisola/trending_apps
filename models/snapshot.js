@@ -6,6 +6,12 @@ var Snapshot = new Schema({
     type:     Date,
     required: true
   },
+
+  recorded_date: {
+    type: String,
+    required: true
+  },
+
   ranking: {
     type: Array,
     required: true
