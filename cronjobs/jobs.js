@@ -46,8 +46,11 @@ function scheduleJob(value, key) {
   }
 
   function addNewAppsToDb(options, callback) {
-    _.each(options.data.feed.entry, function(appData) {
-      var appId = appData.id.attributes['im:id'];
+    _.each(options.data.feed.entry, function(appData, index) {
+      var appId = appData.id.attributes['im:id'],
+          rank = index + 1,
+          newApp;
+
 
       App.find({app_id: appId}, function(err, app) {
         if (err) {
@@ -56,11 +59,40 @@ function scheduleJob(value, key) {
         }
 
         if (!app.length) {
-          var newApp = new App({created_at: new Date(), app_id: appId, metadata: appData});
+          newApp = new App({
+            created_at: new Date(),
+            app_id: appId,
+            metadata: appData,
+            last_seven: [rank],
+            last_thirty: [rank],
+            last_ninety: [rank]
+          });
           newApp.save();
+
+        } else {
+          // app already in DB so just update running rankings
+          updateAppRanking(app[0], rank)
         }
       });
     });
+
+    // helper function
+    function updateAppRanking(app, rank) {
+      app.last_seven.unshift(rank);
+      app.last_thirty.unshift(rank);
+      app.last_ninety.unshift(rank);
+
+      // TODO: [Albert]
+      // fix this so it slices the array vs just popping off the last one
+      if (app.last_seven.length > 7)
+        app.last_seven.pop();
+
+      if (app.last_thirty.length > 30)
+        app.last_thirty.pop();
+
+      if (app.last_ninety > 90)
+        app.last_ninety.pop();
+    }
 
     callback(null, options);
   }

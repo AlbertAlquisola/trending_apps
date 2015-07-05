@@ -5,7 +5,7 @@ module.exports = function(req, res, next) {
     if (err)
       return res.json({status: 400, error: err});
 
-    console.log('showing top 150 apps');
+    console.log('showing all apps');
     res.json({status: 200, apps: apps});
   });
 }

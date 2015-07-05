@@ -15,6 +15,21 @@ var App = new Schema({
   metadata: {
     type: Object,
     required: true
+  },
+
+  last_seven: {
+    type: Array,
+    required: true
+  },
+
+  last_thirty: {
+    type: Array,
+    required: true
+  },
+
+  last_ninety: {
+    type: Array,
+    required: true
   }
 });
 
