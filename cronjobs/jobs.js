@@ -109,7 +109,7 @@ function scheduleJob(value, key) {
 
     } else {
       fetched = true;
-      console.log('successfully pulled in app data at: ', new Date());
+      console.log('successfully pulled in app data on date: ', moment().format('MM-DD-YYYY'));
       console.log(results);
     }
   }
