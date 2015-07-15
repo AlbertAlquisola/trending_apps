@@ -2,6 +2,11 @@ var mongoose = require('mongoose'),
     Schema   = mongoose.Schema
 
 var Snapshot = new Schema({
+  listType: {
+    type: String,
+    required: true
+  },
+
   created_at: {
     type:     Date,
     required: true
@@ -13,6 +18,11 @@ var Snapshot = new Schema({
   },
 
   ranking: {
+    type: Array,
+    required: true
+  },
+
+  apps: {
     type: Array,
     required: true
   }

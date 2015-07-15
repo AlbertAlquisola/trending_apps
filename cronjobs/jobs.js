@@ -1,7 +1,7 @@
 var _        = require('lodash'),
     async    = require('async'),
     request  = require('request'),
-    moment   = require('moment'),
+    moment   = require('moment-timezone').tz.setDefault('America/Los_Angeles'),
     CronJob  = require('cron').CronJob,
     Snapshot = require('../models/snapshot'),
     App      = require('../models/app'),
@@ -12,7 +12,7 @@ function scheduleJob(value, key) {
       fetched;
 
   // schedule daily cronjob to run at 8am PST
-  new CronJob('00 00 08 * * 0-6', fetchAppData, null, true, 'America/Los_Angeles');
+  new CronJob('50 04 21 * * 0-6', fetchAppData, null, true, 'America/Los_Angeles');
 
   function makeRequest(callback) {
     var options = {};
@@ -23,34 +23,19 @@ function scheduleJob(value, key) {
         return callback(new Error('There was an error fetching data from the API.'));
       }
 
+      options.apps = [];
       options.data = JSON.parse(data.body);
       callback(null, options);
     });
   }
 
-  function addSnapshotToDb(options, callback) {
-    var snapshot = new Snapshot({
-      created_at: new Date(),
-      recorded_date: moment().format('MM-DD-YYYY'),
-      ranking: options.data.feed.entry
-    });
-
-    snapshot.save(function(err, snapshot) {
-      if (err) {
-        console.log(err);
-        return callback(new Error('There was an error saving the snapshot to the db.'));
-      }
-
-      callback(null, options);
-    });
-  }
-
   function addNewAppsToDb(options, callback) {
+    var counter = 0;
+
     _.each(options.data.feed.entry, function(appData, index) {
       var appId = appData.id.attributes['im:id'],
           rank = index + 1,
           newApp;
-
 
       App.find({app_id: appId}, function(err, app) {
         if (err) {
@@ -60,27 +45,44 @@ function scheduleJob(value, key) {
 
         if (!app.length) {
           newApp = new App({
-            created_at: new Date(),
+            created_at: moment.tz(),
             app_id: appId,
             metadata: appData,
             last_seven: [rank],
             last_thirty: [rank],
-            last_ninety: [rank]
+            last_ninety: [rank],
+            current_ranking: rank,
+            previous_ranking: 0,
+            change_in_ranking: 151 - rank,
           });
+
           newApp.save();
+          options.apps.push(newApp);
 
         } else {
           // app already in DB so just update running rankings
-          updateAppRanking(app[0], rank)
+          updateAppRanking(app[0], rank);
+          options.apps.push(app[0]);
+        }
+
+        counter++;
+        if (counter >= 150) {
+          callback(null, options);
         }
       });
     });
 
     // helper function
     function updateAppRanking(app, rank) {
+      var currentRankingPointer = app.current_ranking;
+
       app.last_seven.unshift(rank);
       app.last_thirty.unshift(rank);
       app.last_ninety.unshift(rank);
+
+      app.current_ranking = rank;
+      app.previous_ranking = currentRankingPointer;
+      app.change_in_ranking = app.current_ranking = app.previous_ranking;
 
       // TODO: [Albert]
       // fix this so it slices the array vs just popping off the last one
@@ -93,8 +95,25 @@ function scheduleJob(value, key) {
       if (app.last_ninety > 90)
         app.last_ninety.pop();
     }
+  }
 
-    callback(null, options);
+  function addSnapshotToDb(options, callback) {
+    var snapshot = new Snapshot({
+      listType: key,
+      created_at: moment.tz(),
+      recorded_date: moment.tz().format('MM-DD-YYYY'),
+      ranking: options.data.feed.entry,
+      apps: options.apps
+    });
+
+    snapshot.save(function(err, snapshot) {
+      if (err) {
+        console.log(err);
+        return callback(new Error('There was an error saving the snapshot to the db.'));
+      }
+
+      callback(null, options);
+    });
   }
 
   function doneCallback(err, results) {
@@ -109,16 +128,15 @@ function scheduleJob(value, key) {
 
     } else {
       fetched = true;
-      console.log('successfully pulled in app data on date: ', moment().format('MM-DD-YYYY'));
-      console.log(results);
+      console.log('successfully pulled in app data on date: ', moment.tz().format('MM-DD-YYYY'));
     }
   }
 
   function fetchAppData() {
     async.waterfall([
       makeRequest,
-      addSnapshotToDb,
-      addNewAppsToDb
+      addNewAppsToDb,
+      addSnapshotToDb
 
     ], doneCallback);
   }

@@ -30,6 +30,21 @@ var App = new Schema({
   last_ninety: {
     type: Array,
     required: true
+  },
+
+  current_ranking: {
+    type: Number,
+    required: true
+  },
+
+  previous_ranking: {
+    type: Number,
+    required: true
+  },
+
+  change_in_ranking: {
+    type: Number,
+    required: true
   }
 });
 

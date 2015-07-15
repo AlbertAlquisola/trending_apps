@@ -5,7 +5,10 @@ module.exports = function(req, res, next) {
     if (err)
       return res.json({status: 400, error: err});
     
+    if (!app.length) {
+      return res.json({status: 200, message: 'no app found wth this ID'});
+    }
       console.log('successfully retrieved app info for: ' + app[0].metadata['im:name'].label);
-      res.json({status: 200, app: app[0]});
+      return res.json({status: 200, app: app[0]});
   });
 }

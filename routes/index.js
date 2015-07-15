@@ -5,14 +5,10 @@ var controller = require('../controllers'),
 
 module.exports = function(app) {
   app.get('/',
-    snapshots.show
+    snapshots.all
   );
 
-  app.get('/snapshots',
-    snapshots.show
-  );
-
-  app.get('/snapshots/:date',
+  app.get('/snapshots/:type',
     snapshots.show
   );
 
