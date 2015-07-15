@@ -5,6 +5,7 @@ var _ = require('lodash'),
 
 module.exports = function(req, res, next) {
   var appListType = req.params.type;
+  var sortedList;
 
   if (!urls[appListType])
     return res.json({status: 400, error: 'list type does not exist.'});
@@ -17,6 +18,10 @@ module.exports = function(req, res, next) {
       return res.json({status: 400, error: 'no snapshot found for this type.'});
     }
 
-    res.json({status: 200, snapshot: _.first(snapshot)});
+    var sortedList = _.sortBy(_.first(snapshot).apps, function(app) {
+       return app.current_ranking;
+    });
+
+    res.json({status: 200, snapshot: sortedList});
   });
 };
