@@ -43,7 +43,7 @@ var App = new Schema({
   },
 
   change_in_ranking: {
-    type: Number,
+    type: Object,
     required: true
   }
 });

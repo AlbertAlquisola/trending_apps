@@ -12,7 +12,7 @@ function scheduleJob(value, key) {
       fetched;
 
   // schedule daily cronjob to run at 8am PST
-  new CronJob('00 28 22 * * 0-6', fetchAppData, null, true, 'America/Los_Angeles');
+  new CronJob('10 59 19 * * 0-6', fetchAppData, null, true, 'America/Los_Angeles');
 
   function makeRequest(callback) {
     var options = {};
@@ -37,13 +37,13 @@ function scheduleJob(value, key) {
           rank = index + 1,
           newApp;
 
-      App.find({app_id: appId}, function(err, app) {
+      App.findOne({app_id: appId}, function(err, app) {
         if (err) {
           console.log(err);
           return callback(new Error('There was an error fetching the matching app.'));
         }
 
-        if (!app.length) {
+        if (!app) {
           newApp = new App({
             created_at: moment.tz(),
             app_id: appId,
@@ -53,7 +53,10 @@ function scheduleJob(value, key) {
             last_ninety: [rank],
             current_ranking: rank,
             previous_ranking: 0,
-            change_in_ranking: 151 - rank,
+            change_in_ranking: {
+              posOrNegChange: 1,
+              rankingChange: 151 - rank
+            },
           });
 
           newApp.save();
@@ -61,8 +64,8 @@ function scheduleJob(value, key) {
 
         } else {
           // app already in DB so just update running rankings
-          updateAppRanking(app[0], rank);
-          options.apps.push(app[0]);
+          updateAppRanking(app, rank);
+          options.apps.push(app);
         }
 
         counter++;
@@ -71,30 +74,6 @@ function scheduleJob(value, key) {
         }
       });
     });
-
-    // helper function
-    function updateAppRanking(app, rank) {
-      var currentRankingPointer = app.current_ranking;
-
-      app.last_seven.unshift(rank);
-      app.last_thirty.unshift(rank);
-      app.last_ninety.unshift(rank);
-
-      app.current_ranking = rank;
-      app.previous_ranking = currentRankingPointer;
-      app.change_in_ranking = app.current_ranking = app.previous_ranking;
-
-      // TODO: [Albert]
-      // fix this so it slices the array vs just popping off the last one
-      if (app.last_seven.length > 7)
-        app.last_seven.pop();
-
-      if (app.last_thirty.length > 30)
-        app.last_thirty.pop();
-
-      if (app.last_ninety > 90)
-        app.last_ninety.pop();
-    }
   }
 
   function addSnapshotToDb(options, callback) {
@@ -140,6 +119,77 @@ function scheduleJob(value, key) {
 
     ], doneCallback);
   }
+}
+
+/* 
+ * helper functions
+ */
+function updateAppRanking(app, rank) {
+  var currentRankingPointer = app.current_ranking;
+
+  if (!app.current_ranking || !_.isNumber(app.currentRanking) || app.currentRanking > 150)
+    currentRankingPointer = 151;
+
+  app.last_seven = updateLastSeven(app, rank);
+  app.last_thirty = updateLastThirty(app, rank);
+  app.last_ninety = updateLastNinety(app, rank);
+
+  app.current_ranking = rank;
+  app.previous_ranking = currentRankingPointer;
+  app.change_in_ranking = calculateRankingChange(rank, currentRankingPointer);
+  
+  app.save();
+}
+
+function calculateRankingChange(newRank, oldRank) {
+  var rankInfo = {};
+
+  // app fell out of top 150 and came back in
+  if (!oldRank || !_.isNumber(oldRank) || oldRank > 150) {
+    rankInfo.posOrNegChange = 1;
+    rankInfo.rankingChange = 151 - newRank;
+
+  // fell in rankings
+  } else if (newRank > oldRank) {
+    rankInfo.posOrNegChange = -1;
+    rankInfo.rankingChange = Math.abs(newRank - oldRank);
+
+  // moved up in rankings
+  } else if (newRank < oldRank) {
+    rankInfo.posOrNegChange = 1;
+    rankInfo.rankingChange = Math.abs(newRank - oldRank);
+
+  // ranking didnt change
+  } else if (newRank === oldRank) {
+    rankInfo.posOrNegChange = 0;
+    rankInfo.rankingChange = 0;
+  }
+
+  return rankInfo; 
+}
+
+function updateLastSeven(app, rank) {
+  var lastSeven = _.cloneDeep(app.last_seven);
+
+  lastSeven.unshift(rank);
+  lastSeven = lastSeven.slice(0,7);
+  return lastSeven;
+}
+
+function updateLastThirty(app, rank) {
+  var lastThirty = _.cloneDeep(app.last_thirty);
+
+  lastThirty.unshift(rank);
+  lastThirty = lastThirty.slice(0,30);
+  return lastThirty;
+}
+
+function updateLastNinety(app, rank) {
+  var lastNinety = _.cloneDeep(app.last_ninety);
+
+  lastNinety.unshift(rank);
+  lastNinety = lastNinety.slice(0,90);
+  return lastNinety;
 }
 
 // for every url, schedule a daily cronjob

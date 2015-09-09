@@ -18,10 +18,10 @@ module.exports = function(req, res, next) {
       return res.json({status: 400, error: 'no snapshot found for this type.'});
     }
 
-    sortedList = _.sortBy(_.first(snapshot).apps, function(app) {
+    sortedList = _.sortBy(_.last(snapshot).apps, function(app) {
        return app.current_ranking;
     });
-
+    console.log(sortedList);
     res.json({status: 200, snapshot: sortedList});
   });
 };
